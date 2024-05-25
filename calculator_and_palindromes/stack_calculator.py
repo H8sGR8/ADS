@@ -33,7 +33,7 @@ class RPNStack:
         return False
 
     def add_operators_according_to_order(self, char):
-        if self.check_if_in_operators(char) > self.check_if_in_operators(self.operators_stack.top()):
+        if self.check_if_in_operators(char) < self.check_if_in_operators(self.operators_stack.top()):
             if self.brackets_stack.is_empty():
                 self.add_rest_of_operators()
             else:

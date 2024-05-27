@@ -8,14 +8,14 @@ class ReadingImage:
         self.image = Image.open(image).convert("RGB")
 
     def global_single_thresholding(self, limit, show):
-        pixels = np.array(self.image.convert("L"))
+        pixels = np.array(self.image.convert("L"), dtype=np.uint8)
         if show:
             Image.fromarray(np.where(pixels < limit, 0, 255)).show()
         else:
             return np.where(pixels < limit, 0, 255)
 
     def local_single_thresholding(self):
-        pixels = np.array(self.image.convert("L"))
+        pixels = np.array(self.image.convert("L"), dtype=np.uint8)
         limit = (pixels.min() + pixels.max() - pixels.mean()) // 2
         self.global_single_thresholding(limit, True)
 
@@ -30,19 +30,21 @@ class ReadingImage:
             print("wrong color")
 
     def grayscale_with_histogram(self):
-        pixels = np.array(self.image.convert("L"))
+        pixels = np.array(self.image.convert("L"), dtype=np.uint8)
         various_elements, count = np.unique(pixels, return_counts=True)
         cfd_dict = {}
+        new_pixel_values = {}
         for i in range(len(various_elements)):
             if i == 0:
                 cfd_dict[pixels.min()] = count[i]
             else:
                 cfd_dict[various_elements[i]] = count[i] + cfd_dict[various_elements[i - 1]]
-        for y in range(self.image.height):
-            for x in range(self.image.width):
-                pixels[y][x] = round(255 * ((cfd_dict[pixels[y][x]] - cfd_dict[min(various_elements)]) /
-                                     (pixels.size - cfd_dict[min(various_elements)])))
-        Image.fromarray(pixels).show()
+        min_sum = cfd_dict[min(various_elements)]
+        for i in range(len(various_elements)):
+            new_pixel_values[various_elements[i]] = int(round((cfd_dict[various_elements[i]] - min_sum) /
+                                                        (pixels.size - min_sum) * 255))
+        Image.fromarray(np.array([new_pixel_values[np.uint8(x)]
+                                  for x in np.nditer(pixels)]).reshape(self.image.height, self.image.width)).show()
 
 
 if __name__ == "__main__":

@@ -97,7 +97,6 @@ class EquationToCalculate:
 
     def calculate(self):
         self.reverse_stack()
-        print(self.reversed_stack.stack)
         while not self.reversed_stack.is_empty():
             if self.reversed_stack.top() not in self.operators:
                 self.result_stack.my_push(self.reversed_stack.my_pop())

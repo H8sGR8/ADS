@@ -16,6 +16,12 @@ class RPNStack:
             self.equation_stack.my_push(self.number)
             self.number = ""
 
+    def check_if_in_operators(self, char):
+        for i in range(len(self.operators)):
+            if char in self.operators[i]:
+                return i + 1
+        return False
+
     def add_rest_of_operators(self):
         while not self.operators_stack.is_empty():
             self.equation_stack.my_push(self.operators_stack.my_pop())
@@ -26,18 +32,17 @@ class RPNStack:
         for i in range(operators_in_bracket):
             self.equation_stack.my_push(self.operators_stack.my_pop())
 
-    def check_if_in_operators(self, char):
-        for i in range(len(self.operators)):
-            if char in self.operators[i]:
-                return i + 1
-        return False
-
     def add_operators_according_to_order(self, char):
-        if self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()):
-            if self.brackets_stack.is_empty():
-                self.add_rest_of_operators()
-            else:
-                self.add_operators_from_bracket()
+        if (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
+                not self.operators_stack.is_empty()):
+            while (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
+                    not self.operators_stack.is_empty()):
+                if self.brackets_stack.is_empty():
+                    self.equation_stack.my_push(self.operators_stack.my_pop())
+                else:
+                    if self.operators_stack.len() - int(self.brackets_stack.top()) == 0:
+                        return
+                    self.equation_stack.my_push(self.operators_stack.my_pop())
 
     def create_stack(self):
         number_appeared = 0
@@ -92,6 +97,7 @@ class EquationToCalculate:
 
     def calculate(self):
         self.reverse_stack()
+        print(self.reversed_stack.stack)
         while not self.reversed_stack.is_empty():
             if self.reversed_stack.top() not in self.operators:
                 self.result_stack.my_push(self.reversed_stack.my_pop())
@@ -104,11 +110,12 @@ class EquationToCalculate:
 
 
 if __name__ == "__main__":
-    Equation = input("Enter equation to calculate\n")
+    Equation = input("Enter equation to calculate\n"
+                     "Giving negative numbers always put them in brackets like that (-1)\n")
     result = EquationToCalculate(Equation)
     try:
         print(f"{Equation} is equal to {result.calculate()}")
     except TypeError:
         print("error in equation")
 
-# (3*6+2)+(14/3+4) 17*(2+3)+4+(8*5) 2+2*2
+# (3*6+2)+(14/3+4) 17*(2+3)+4+(8*5) (-2)*4+6/7.5-2.5 2*2+2-2+(2*2+2-2*2)*2-2+2

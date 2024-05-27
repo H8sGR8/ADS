@@ -13,7 +13,6 @@ class MyStack:
     def top(self):
         if not self.is_empty():
             return self.stack[self.top_index]
-        # print("Stack is empty")
 
     def my_push(self, element):
         if self.top_index != self.max_space:

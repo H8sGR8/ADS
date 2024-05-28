@@ -1,14 +1,14 @@
 class Node:
-	def __init__(self, data):
+	def __init__(self, data: str):
 		self.data = data
 		self.next = None
 
 
 class LinkedList:
-	def __init__(self):
+	def __init__(self) -> None:
 		self.head = None
 
-	def insert_at_begin(self, data):
+	def insert_at_begin(self, data: str) -> None:
 		new_node = Node(data)
 		if self.head is None:
 			self.head = new_node
@@ -17,7 +17,7 @@ class LinkedList:
 			new_node.next = self.head
 			self.head = new_node
 
-	def insert_at_index(self, data, index):
+	def insert_at_index(self, data: str, index) -> None:
 		new_node = Node(data)
 		current_node = self.head
 		position = 0
@@ -33,7 +33,7 @@ class LinkedList:
 			else:
 				print("Index not present")
 
-	def insert_at_end(self, data):
+	def insert_at_end(self, data: str) -> None:
 		new_node = Node(data)
 		if self.head is None:
 			self.head = new_node
@@ -43,7 +43,7 @@ class LinkedList:
 			current_node = current_node.next
 		current_node.next = new_node
 
-	def update_node(self, val, index):
+	def update_node(self, val: str, index) -> None:
 		current_node = self.head
 		position = 0
 		if position == index:
@@ -57,12 +57,12 @@ class LinkedList:
 			else:
 				print("Index not present")
 
-	def remove_first_node(self):
+	def remove_first_node(self) -> None:
 		if self.head is None:
 			return
 		self.head = self.head.next
 
-	def remove_last_node(self):
+	def remove_last_node(self) -> None:
 		if self.head is None:
 			return
 		current_node = self.head
@@ -70,7 +70,7 @@ class LinkedList:
 			current_node = current_node.next
 		current_node.next = None
 
-	def remove_at_index(self, index):
+	def remove_at_index(self, index) -> None:
 		if self.head is None:
 			return
 		current_node = self.head
@@ -86,7 +86,7 @@ class LinkedList:
 			else:
 				print("Index not present")
 
-	def remove_node(self, data):
+	def remove_node(self, data: str) -> None:
 		current_node = self.head
 		if current_node.data == data:
 			self.remove_first_node()
@@ -98,7 +98,7 @@ class LinkedList:
 		else:
 			current_node.next = current_node.next.next
 
-	def size_of_ll(self):
+	def size_of_ll(self) -> int:
 		size = 0
 		if self.head:
 			current_node = self.head
@@ -109,7 +109,7 @@ class LinkedList:
 		else:
 			return 0
 
-	def print_ll(self):
+	def print_ll(self) -> None:
 		current_node = self.head
 		while current_node:
 			print(current_node.data, end="\t")

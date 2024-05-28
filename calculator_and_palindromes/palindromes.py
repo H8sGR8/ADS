@@ -4,17 +4,17 @@ from stack import MyStack
 
 class PalindromeCheck:
 
-    def __init__(self, word):
+    def __init__(self, word: str):
         self.word = word
         self.first_half = MyStack(len(self.word) // 2)
         self.reversed_second_half = MyStack(len(self.word) // 2)
         self.my_list = LinkedList()
 
-    def create_linked_list(self):
+    def create_linked_list(self) -> None:
         for letter in self.word:
             self.my_list.insert_at_end(letter)
 
-    def create_normal_and_reversed_stack(self):
+    def create_normal_and_reversed_stack(self) -> None:
         self.create_linked_list()
         for i in range(self.my_list.size_of_ll()//2):
             current_node = self.my_list.head
@@ -26,7 +26,7 @@ class PalindromeCheck:
             self.first_half.my_push(current_node.data)
             current_node = current_node.next
 
-    def check_if_palindrome(self):
+    def check_if_palindrome(self) -> bool:
         self.create_normal_and_reversed_stack()
         if self.first_half.len() != self.reversed_second_half.len():
             return False
@@ -35,7 +35,7 @@ class PalindromeCheck:
                 return False
         return True
 
-    def print_result(self):
+    def print_result(self) -> None:
         if self.check_if_palindrome():
             print(f"{self.word} is a palindrome")
         else:

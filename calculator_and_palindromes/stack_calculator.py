@@ -3,7 +3,7 @@ from stack import MyStack
 
 class RPNStack:
 
-    def __init__(self, equation):
+    def __init__(self, equation: str):
         self.equation = equation
         self.number = ""
         self.operators = [["+", "-"], ["*", "/"], ["^", "s"]]
@@ -11,28 +11,28 @@ class RPNStack:
         self.operators_stack = MyStack(len(self.equation))
         self.brackets_stack = MyStack(len(self.equation))
 
-    def add_number(self):
+    def add_number(self) -> None:
         if self.number != "":
             self.equation_stack.my_push(self.number)
             self.number = ""
 
-    def check_if_in_operators(self, char):
+    def check_if_in_operators(self, char: str) -> int:
         for i in range(len(self.operators)):
             if char in self.operators[i]:
                 return i + 1
-        return False
+        return 0
 
-    def add_rest_of_operators(self):
+    def add_rest_of_operators(self) -> None:
         while not self.operators_stack.is_empty():
             self.equation_stack.my_push(self.operators_stack.my_pop())
 
-    def add_operators_from_bracket(self):
+    def add_operators_from_bracket(self) -> None:
         operators_in_bracket = self.operators_stack.len() - int(self.brackets_stack.top())
         self.add_number()
         for i in range(operators_in_bracket):
             self.equation_stack.my_push(self.operators_stack.my_pop())
 
-    def add_operators_according_to_order(self, char):
+    def add_operators_according_to_order(self, char: str) -> None:
         if (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
                 not self.operators_stack.is_empty()):
             while (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
@@ -44,7 +44,7 @@ class RPNStack:
                         return
                     self.equation_stack.my_push(self.operators_stack.my_pop())
 
-    def create_stack(self):
+    def create_stack(self) -> None:
         number_appeared = 0
         for i in self.equation:
             if self.check_if_in_operators(i):
@@ -77,11 +77,11 @@ class EquationToCalculate:
         self.result_stack = MyStack(self.rnp_stack.equation_stack.len())
         self.operators = ["+", "-", "/", "*", "^", "s"]
 
-    def reverse_stack(self):
+    def reverse_stack(self) -> None:
         while not self.rnp_stack.equation_stack.is_empty():
             self.reversed_stack.my_push(self.rnp_stack.equation_stack.my_pop())
 
-    def choose_operation(self, last_digit, second_last_digit):
+    def choose_operation(self, last_digit: float, second_last_digit: float) -> float:
         if self.reversed_stack.top() == "+":
             return second_last_digit + last_digit
         elif self.reversed_stack.top() == "-":
@@ -95,7 +95,7 @@ class EquationToCalculate:
         elif self.reversed_stack.top() == "s":
             return last_digit ** (1/second_last_digit)
 
-    def calculate(self):
+    def calculate(self) -> str:
         self.reverse_stack()
         while not self.reversed_stack.is_empty():
             if self.reversed_stack.top() not in self.operators:

@@ -1,5 +1,7 @@
 from PIL import Image
 import numpy as np
+from time import time
+from tqdm import tqdm
 
 
 class ReadingImage:
@@ -46,15 +48,69 @@ class ReadingImage:
         Image.fromarray(np.array([new_pixel_values[np.uint8(x)]
                                   for x in np.nditer(pixels)]).reshape(self.image.height, self.image.width)).show()
 
-    def grayscale_with_mean_filter(self, naive: bool):
-        pass
+    def mean_filter(self, size: tuple[int, int]) -> None:
+        pixels = np.array(self.image.convert("L"), dtype=np.uint8)
+        area = size[0] * size[1]
+        horizontal_padding = size[0]//2
+        vertical_padding = size[1]//2
+        new_pixels = []
+        for y in tqdm(range(vertical_padding, self.image.height - vertical_padding)):
+            new_pixels_line = []
+            for x in range(horizontal_padding, self.image.width - horizontal_padding):
+                pixel = 0
+                for y_size in range(-vertical_padding, vertical_padding):
+                    for x_size in range(-horizontal_padding, horizontal_padding):
+                        pixel += pixels[y + y_size][x + x_size]
+                new_pixels_line.append(pixel // area)
+            new_pixels.append(new_pixels_line)
+        Image.fromarray(np.array(new_pixels)).show()
+
+    def create_summed_area_table(self) -> np.ndarray:
+        sat = np.array(self.image.convert("L"), dtype=int)
+        for y in range(self.image.height):
+            for x in range(self.image.width):
+                if x > 0 and y > 0:
+                    sat[y][x] += sat[y][x - 1] - sat[y - 1][x - 1] + sat[y - 1][x]
+                elif x > 0:
+                    sat[y][x] += sat[y][x - 1]
+                elif y > 0:
+                    sat[y][x] += sat[y - 1][x]
+        return sat
+
+    def mean_filter_with_summed_area_table(self, size: tuple[int, int]) -> None:
+        sat = self.create_summed_area_table()
+        area = size[0] * size[1]
+        horizontal_padding = size[0] // 2
+        vertical_padding = size[1] // 2
+        new_pixels = []
+        for y in range(vertical_padding, self.image.height - vertical_padding):
+            new_pixels_line = []
+            for x in range(horizontal_padding, self.image.width - horizontal_padding):
+                new_pixels_line.append((sat[y + vertical_padding][x + horizontal_padding] -
+                                        sat[y + vertical_padding][x - horizontal_padding] -
+                                        sat[y - vertical_padding][x + horizontal_padding] +
+                                        sat[y - vertical_padding][x - horizontal_padding]) // area)
+            new_pixels.append(new_pixels_line)
+        Image.fromarray(np.array(new_pixels)).show()
+
+    def grayscale_with_mean_filter(self, naive: bool, size: tuple[int, int]) -> None:
+        if naive:
+            self.mean_filter(size)
+        else:
+            self.mean_filter_with_summed_area_table(size)
 
 
 if __name__ == "__main__":
     yoda = ReadingImage("yoda.jpeg")
     sudoku = ReadingImage("sudoku.jpg")
-    '''sudoku.global_single_thresholding(127, True)
+    road = ReadingImage("road.jpg")
+    sudoku.global_single_thresholding(127, True)
     sudoku.local_single_thresholding()
     yoda.global_single_thresholding(127, True)
-    yoda.double_thresholding(120, 220, "white")'''
+    yoda.double_thresholding(120, 220, "white")
     yoda.grayscale_with_histogram()
+    t1 = time()
+    road.grayscale_with_mean_filter(True, (5, 5))
+    t2 = time()
+    road.grayscale_with_mean_filter(False, (21, 21))
+    print(f"for naive method time is {t2 - t1}, for sat method time is {time() - t2}")

@@ -7,12 +7,15 @@ from tqdm import tqdm
 class ReadingImage:
 
     def __init__(self, image):
+        self.name = image.split(".")[0]
+        self.extension = image.split(".")[-1]
         self.image = Image.open(image).convert("RGB")
 
     def global_single_thresholding(self, limit: int, show: bool) -> np.ndarray:
         pixels = np.array(self.image.convert("L"), dtype=np.uint8)
         if show:
-            Image.fromarray(np.where(pixels < limit, 0, 255)).show()
+            (Image.fromarray(np.where(pixels < limit, 0, 255)).convert("RGB")
+             .save(self.name + "_single_thresholding." + self.extension))
         else:
             return np.where(pixels < limit, 0, 255)
 
@@ -25,9 +28,11 @@ class ReadingImage:
         bottom_threshold = self.global_single_thresholding(bottom, False)
         top_threshold = self.global_single_thresholding(top, False)
         if color == "black":
-            Image.fromarray(np.where(bottom_threshold != top_threshold, 0, 255)).show()
+            (Image.fromarray(np.where(bottom_threshold != top_threshold, 0, 255)).convert("RGB")
+             .save(self.name + "_double_thresholding." + self.extension))
         elif color == "white":
-            Image.fromarray(np.where(bottom_threshold != top_threshold, 255, 0)).show()
+            (Image.fromarray(np.where(bottom_threshold != top_threshold, 255, 0)).convert("RGB")
+             .save(self.name + "_double_thresholding." + self.extension))
         else:
             print("wrong color")
 
@@ -45,8 +50,9 @@ class ReadingImage:
         for i in range(len(various_elements)):
             new_pixel_values[various_elements[i]] = np.uint8(round((cfd_dict[various_elements[i]] - min_sum) /
                                                              (pixels.size - min_sum) * 255))
-        Image.fromarray(np.array([new_pixel_values[np.uint8(x)]
-                                  for x in np.nditer(pixels)]).reshape(self.image.height, self.image.width)).show()
+        (Image.fromarray(np.array([new_pixel_values[np.uint8(x)]
+                                  for x in np.nditer(pixels)]).reshape(self.image.height, self.image.width))
+         .convert("RGB").save(self.name + "_grayscale_with_histogram." + self.extension))
 
     def mean_filter(self, size: tuple[int, int]) -> None:
         pixels = np.array(self.image.convert("L"), dtype=np.uint8)
@@ -63,7 +69,7 @@ class ReadingImage:
                         pixel += pixels[y + y_size][x + x_size]
                 new_pixels_line.append(pixel // area)
             new_pixels.append(new_pixels_line)
-        Image.fromarray(np.array(new_pixels)).show()
+        Image.fromarray(np.array(new_pixels)).convert("RGB").save(self.name + "_mean_filter_naive." + self.extension)
 
     def create_summed_area_table(self) -> np.ndarray:
         sat = np.array(self.image.convert("L"), dtype=int)
@@ -91,7 +97,7 @@ class ReadingImage:
                                         sat[y - vertical_padding][x + horizontal_padding] +
                                         sat[y - vertical_padding][x - horizontal_padding]) // area)
             new_pixels.append(new_pixels_line)
-        Image.fromarray(np.array(new_pixels)).show()
+        Image.fromarray(np.array(new_pixels)).convert("RGB").save(self.name + "_mean_filter_sat." + self.extension)
 
     def grayscale_with_mean_filter(self, naive: bool, size: tuple[int, int]) -> None:
         if naive:
@@ -110,7 +116,7 @@ if __name__ == "__main__":
     yoda.double_thresholding(120, 220, "white")
     yoda.grayscale_with_histogram()
     t1 = time()
-    road.grayscale_with_mean_filter(True, (5, 5))
+    road.grayscale_with_mean_filter(True, (21, 21))
     t2 = time()
     road.grayscale_with_mean_filter(False, (21, 21))
     print(f"for naive method time is {t2 - t1}, for sat method time is {time() - t2}")

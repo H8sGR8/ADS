@@ -39,7 +39,7 @@ class Infrastructure:
                     if city1 not in city2.roads.keys():
                         self.number_of_roads += 1
 
-    def ensure_2_roads(self, cities_with_2_roads: set) -> bool:
+    def ensure_2_roads(self, cities_with_2_roads: set[City]) -> bool:
         for cityA in (self.cities - cities_with_2_roads):
             for cityB in cityA.roads.keys():
                 if len(cityB.roads) > 2:
@@ -84,37 +84,48 @@ class Infrastructure:
                 plt.plot([city1.cords[0], city2.cords[0]], [city1.cords[1], city2.cords[1]], color="blue")
         plt.show()
 
+    def add_new_path(self, path: str, city: City, new_visited_cities: list[City],
+                     distance: float) -> tuple[str, list, float]:
+        new_path = path + str(city.cords)
+        new_visited_cities.append(city)
+        new_distance = distance + new_visited_cities[-2].roads[city].distance
+        if (len(new_visited_cities) == len(self.cities) and
+                new_visited_cities.index(self.city_of_origin) == 0):
+            new_visited_cities.pop(0)
+        return new_path, new_visited_cities, new_distance
+
+    def show_shortest_path_for_bfs(self, paths: dict[str: tuple[list[City]], float]) -> None:
+        distances = {}
+        for items in paths.items():
+            if round(items[1][1] * 1000) / 1000 in distances.keys():
+                distances[round(items[1][1] * 1000) / 1000].append((items[0], items[1][0]))
+            else:
+                distances[round(items[1][1] * 1000) / 1000] = [(items[0], items[1][0])]
+        if len(distances[min(distances.keys())][0][1]) == len(self.cities):
+            print(f"BFS\ndistance: {min(distances.keys())}\npath: {distances[min(distances.keys())][0][0]}\n")
+        else:
+            print("impossible path")
+
     def breadth_first_search(self) -> None:
         paths = {str(self.city_of_origin.cords): ([self.city_of_origin], 0)}
         new_paths = {}
-        distances = {}
         while True:
             changes = 0
             for path in paths.keys():
                 visited_cities, distance = paths[path][0], paths[path][1]
                 for city in visited_cities[-1].roads.keys():
                     if city not in visited_cities:
-                        new_path = path + str(city.cords)
-                        new_visited_cities = visited_cities.copy()
-                        new_visited_cities.append(city)
-                        new_distance = distance + visited_cities[-1].roads[city].distance
-                        if (len(new_visited_cities) == len(self.cities) and
-                                new_visited_cities.index(self.city_of_origin) == 0):
-                            new_visited_cities.pop(0)
+                        new_path, new_visited_cities, new_distance = (
+                            self.add_new_path(path, city, visited_cities.copy(), distance))
                         new_paths[new_path] = (new_visited_cities, new_distance)
                         changes += 1
             if not changes:
                 break
             paths = new_paths.copy()
             new_paths = {}
-        for items in paths.items():
-            if round(items[1][1] * 1000) / 1000 in distances.keys():
-                distances[round(items[1][1] * 1000) / 1000].append(items[0])
-            else:
-                distances[round(items[1][1] * 1000) / 1000] = [items[0]]
-        print(f"BFS\ndistance: {min(distances.keys())}\npath: {distances[min(distances.keys())][0]}\n")
+        self.show_shortest_path_for_bfs(paths)
 
-    def dfs_execution(self, current_city: City, visited_cities: list, path: float) -> tuple[float, list]:
+    def dfs_execution(self, current_city: City, visited_cities: list[City], path: float) -> tuple[float, list]:
         min_path = []
         min_distance = math.inf
         if len(visited_cities) == len(self.cities):
@@ -143,31 +154,40 @@ class Infrastructure:
         else:
             print("DFS\nimpossible path\n")
 
+    @staticmethod
+    def pick_shortest_paths(visited_cities: list[City], path_len_lim: float,
+                            roads_list: list[tuple[City, City]]) -> int:
+        changes = 0
+        for city in visited_cities:
+            for road in city.roads:
+                if road not in visited_cities and city.roads[road].distance <= path_len_lim:
+                    roads_list.append((city, road))
+                    visited_cities.append(road)
+                    changes += 1
+        return changes
+
+    @staticmethod
+    def set_new_path_len(visited_cities: list[City], path_len_lim: float) -> float:
+        new_path_len_lim = math.inf
+        for city in visited_cities:
+            for road in city.roads:
+                if new_path_len_lim > city.roads[road].distance > path_len_lim:
+                    new_path_len_lim = city.roads[road].distance
+        return new_path_len_lim
+
     def build_mst(self) -> list[tuple[City, City]]:
         visited_cities = [self.city_of_origin]
         path_len_lim = 0
         roads_list = []
         while len(roads_list) < len(self.cities) - 1:
-            changes = 0
-            for city in visited_cities:
-                for road in city.roads:
-                    if road not in visited_cities and city.roads[road].distance <= path_len_lim:
-                        roads_list.append((city, road))
-                        visited_cities.append(road)
-                        changes += 1
+            changes = self.pick_shortest_paths(visited_cities, path_len_lim, roads_list)
             if not changes:
-                new_path_len_lim = math.inf
-                for city in visited_cities:
-                    for road in city.roads:
-                        if new_path_len_lim > city.roads[road].distance > path_len_lim:
-                            new_path_len_lim = city.roads[road].distance
-                path_len_lim = new_path_len_lim
+                path_len_lim = self.set_new_path_len(visited_cities, path_len_lim)
         return roads_list
 
-    def execute_mst(self) -> None:
-        mst = self.build_mst()
-        visited_cities = [self.city_of_origin]
+    def find_path(self, visited_cities: list[City]) -> None:
         current_city = self.city_of_origin
+        mst = self.build_mst()
         first_leaf_achieved = 0
         while len(visited_cities) < len(self.cities):
             for road in mst:
@@ -181,6 +201,10 @@ class Infrastructure:
                     visited_cities.append(current_city)
                 first_leaf_achieved += 1
                 current_city = visited_cities[visited_cities.index(current_city) - 1]
+
+    def execute_mst(self) -> None:
+        visited_cities = [self.city_of_origin]
+        self.find_path(visited_cities)
         visited_cities.append(self.city_of_origin)
         path = str()
         distance = 0
@@ -190,55 +214,35 @@ class Infrastructure:
             path += str(city.cords)
         print(f"MST\ndistance: {round(distance * 1000) / 1000}\npath: {path}\n")
 
-    def greedy_search(self) -> None:
-        current_city = self.city_of_origin
-        visited_cities = [self.city_of_origin]
-        last_city = None
-        problem_causing_city = None
-        while True:
-            min_path = math.inf
-            next_city = None
-            for city in current_city.roads:
-                if (current_city.roads[city].distance < min_path and
-                        city not in visited_cities and not last_city and not problem_causing_city):
-                    min_path = current_city.roads[city].distance
-                    next_city = city
-            if next_city is None:
-                print("GREEDY\nimpossible path\n")
-                return
-            current_city = next_city
-            visited_cities.append(next_city)
-            if problem_causing_city is not None:
-                problem_causing_city = None
-            if len(visited_cities) == len(self.cities) or set(visited_cities[-1].roads.keys()) > set(visited_cities):
-                returned_cities = set()
-                for city in reversed(visited_cities):
-                    returned_cities.add(city)
-                    last_city = city
-                    if (len(visited_cities) == len(self.cities) and self.city_of_origin in city.roads and not
-                       set(visited_cities[visited_cities.index(city) - 1].roads.keys()).isdisjoint(returned_cities)):
-                        break
-                    '''else:
-                        condition1 = set(city.roads.keys()).copy()
-                        condition1.intersection_update(set(visited_cities))
-                        condition2 = set(city.roads.keys()).copy()
-                        condition2.intersection_update(returned_cities)
-                        print(len(set(city.roads.keys())) - len(condition1) + len(condition2))
-                        if len(set(city.roads.keys())) - len(condition1) + len(condition2) >= 2:
-                            problem_causing_city = visited_cities[visited_cities.index(city) + 1]
-                            print(problem_causing_city.cords)
-                            last_city = None'''
-                if last_city == visited_cities[-1]:
-                    break
-                else:
-                    if last_city:
-                        index = visited_cities.index(last_city)
-                    else:
-                        index = visited_cities.index(problem_causing_city)
-                    for i in range(len(self.cities) - index):
-                        visited_cities.pop(index)
-                    current_city = visited_cities[-1]
-        visited_cities.append(self.city_of_origin)
+    @staticmethod
+    def choose_next_city(current_city: City, visited_cities: list[City], last_city: City or None) -> City:
+        min_path = math.inf
+        next_city = None
+        for city in current_city.roads:
+            if (current_city.roads[city].distance < min_path and
+                    city not in visited_cities and not last_city):
+                min_path = current_city.roads[city].distance
+                next_city = city
+        return next_city
+
+    def check_path(self, visited_cities: list[City], last_city: City) -> tuple[City or None, City or None]:
+        returned_cities = set()
+        for city in reversed(visited_cities):
+            returned_cities.add(city)
+            last_city = city
+            if (len(visited_cities) == len(self.cities) and self.city_of_origin in city.roads and not
+               set(visited_cities[visited_cities.index(city) - 1].roads.keys()).isdisjoint(returned_cities)):
+                break
+        if last_city == visited_cities[-1]:
+            return None, None
+        else:
+            index = visited_cities.index(last_city)
+            for i in range(len(self.cities) - index):
+                visited_cities.pop(index)
+            return visited_cities[-1], last_city
+
+    @staticmethod
+    def show_shortest_path_for_gs(visited_cities: list[City]) -> None:
         path = str()
         distance = 0
         for count, city in enumerate(visited_cities):
@@ -247,42 +251,55 @@ class Infrastructure:
             path += str(city.cords)
         print(f"GREEDY\ndistance: {round(distance * 1000) / 1000}\npath: {path}\n")
 
-    def bidirectional_search(self):
-        parted_paths = []
-        paths = []
-        start_city = self.city_of_origin
-        end_city = self.city_of_origin
-        while len(start_city.roads) == len(self.cities) - 1:
-            start_city = random.choice(tuple(self.cities))
-        while start_city == end_city or start_city in end_city.roads:
-            end_city = random.choice(tuple(self.cities - set(start_city.roads.keys())))
-        start_paths = {str(start_city.cords): ([start_city], start_city)}
-        end_paths = {str(end_city.cords): ([end_city], end_city)}
+    def greedy_search(self) -> None:
+        current_city = self.city_of_origin
+        visited_cities = [self.city_of_origin]
+        last_city = None
         while True:
-            for start_path in start_paths.copy():
-                for city in start_paths[start_path][1].roads:
-                    if city not in start_paths[start_path][0]:
-                        start_paths[start_path + str(city.cords)] = (start_paths[start_path][0] + [city], city)
-                start_paths.pop(start_path)
-            broken = 0
-            for start_path in start_paths:
-                for end_path in end_paths:
-                    if start_paths[start_path][1] == end_paths[end_path][1]:
-                        broken = 1
-            if broken:
+            current_city = self.choose_next_city(current_city, visited_cities, last_city)
+            if current_city is None:
+                print("GREEDY\nimpossible path\n")
+                return
+            visited_cities.append(current_city)
+            if len(visited_cities) == len(self.cities) or set(visited_cities[-1].roads.keys()) > set(visited_cities):
+                current_city, last_city = self.check_path(visited_cities, last_city)
+                if current_city is None and last_city is None:
+                    break
+        visited_cities.append(self.city_of_origin)
+        self.show_shortest_path_for_gs(visited_cities)
+
+    @staticmethod
+    def break_loop(start_paths: dict[str: tuple[list[City], City]],
+                   end_paths: dict[str: tuple[list[City], City]]) -> bool:
+        for start_path in start_paths:
+            for end_path in end_paths:
+                if start_paths[start_path][1] == end_paths[end_path][1]:
+                    return True
+        return False
+
+    @staticmethod
+    def visit_next_cities(paths: dict[str: tuple[list[City], City]]) -> None:
+        for path in paths.copy():
+            for city in paths[path][1].roads:
+                if city not in paths[path][0]:
+                    paths[path + str(city.cords)] = (paths[path][0] + [city], city)
+            paths.pop(path)
+
+    def find_parted_paths(self, start_paths: dict[str: tuple[list[City], City]],
+                          end_paths: dict[str: tuple[list[City], City]]) -> None:
+        while True:
+            self.visit_next_cities(start_paths)
+            if self.break_loop(start_paths, end_paths):
                 break
-            for end_path in end_paths.copy():
-                for city in end_paths[end_path][1].roads:
-                    if city not in end_paths[end_path][0]:
-                        end_paths[end_path + str(city.cords)] = (end_paths[end_path][0] + [city], city)
-                end_paths.pop(end_path)
-            broken = 0
-            for start_path in start_paths:
-                for end_path in end_paths:
-                    if start_paths[start_path][1] == end_paths[end_path][1]:
-                        broken = 1
-            if broken:
+            self.visit_next_cities(end_paths)
+            if self.break_loop(start_paths, end_paths):
                 break
+
+    @staticmethod
+    def create_whole_paths(start_paths: dict[str: tuple[list[City], City]],
+                           end_paths: dict[str: tuple[list[City], City]]) -> list[list[City]]:
+        paths = []
+        parted_paths = []
         for start_path in start_paths:
             for end_path in end_paths:
                 if start_paths[start_path][1] == end_paths[end_path][1]:
@@ -295,6 +312,10 @@ class Infrastructure:
                 if count:
                     path.append(city)
             paths.append(path)
+        return paths
+
+    @staticmethod
+    def show_shortest_path_for_bds(paths: list[list[City]]) -> None:
         distances = {}
         for path in paths:
             distance = 0
@@ -307,10 +328,23 @@ class Infrastructure:
         print(f"BDS\ndistance: {distances[min(distances, key=distances.get)]}\n"
               f"path: {min(distances, key=distances.get)}")
 
+    def bidirectional_search(self) -> None:
+        start_city = self.city_of_origin
+        end_city = self.city_of_origin
+        while len(start_city.roads) == len(self.cities) - 1:
+            start_city = random.choice(tuple(self.cities))
+        while start_city == end_city or start_city in end_city.roads:
+            end_city = random.choice(tuple(self.cities - set(start_city.roads.keys())))
+        start_paths = {str(start_city.cords): ([start_city], start_city)}
+        end_paths = {str(end_city.cords): ([end_city], end_city)}
+        self.find_parted_paths(start_paths, end_paths)
+        paths = self.create_whole_paths(start_paths, end_paths)
+        self.show_shortest_path_for_bds(paths)
+
 
 if __name__ == "__main__":
     infrastructure = Infrastructure(5, (-100, 100))
-    percentage_of_roads = 0
+    percentage_of_roads = 100
     infrastructure.leave_percentage_of_roads(percentage_of_roads)
     infrastructure.breadth_first_search()
     infrastructure.depth_first_search()

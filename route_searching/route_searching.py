@@ -185,7 +185,7 @@ class Infrastructure:
                 path_len_lim = self.set_new_path_len(visited_cities, path_len_lim)
         return roads_list
 
-    def find_path(self, visited_cities: list[City]) -> None:
+    def find_path(self, visited_cities: list[City]):
         current_city = self.city_of_origin
         mst = self.build_mst()
         first_leaf_achieved = 0
@@ -210,7 +210,11 @@ class Infrastructure:
         distance = 0
         for count, city in enumerate(visited_cities):
             if count != len(visited_cities) - 1:
-                distance += city.roads[visited_cities[visited_cities.index(city) + 1]].distance
+                try:
+                    distance += city.roads[visited_cities[visited_cities.index(city) + 1]].distance
+                except KeyError:
+                    print("MST\nimpossible path\n")
+                    return
             path += str(city.cords)
         print(f"MST\ndistance: {round(distance * 1000) / 1000}\npath: {path}\n")
 
@@ -343,14 +347,13 @@ class Infrastructure:
 
 
 if __name__ == "__main__":
-    infrastructure = Infrastructure(5, (-100, 100))
+    infrastructure = Infrastructure(10, (-100, 100))
     percentage_of_roads = 100
     infrastructure.leave_percentage_of_roads(percentage_of_roads)
     infrastructure.breadth_first_search()
     infrastructure.depth_first_search()
-    if percentage_of_roads == 100:
-        infrastructure.greedy_search()
-        infrastructure.execute_mst()
+    infrastructure.greedy_search()
+    infrastructure.execute_mst()
     if percentage_of_roads < 100:
         infrastructure.bidirectional_search()
     infrastructure.show_infrastructure()

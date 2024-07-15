@@ -33,16 +33,14 @@ class RPNStack:
             self.equation_stack.my_push(self.operators_stack.my_pop())
 
     def add_operators_according_to_order(self, char: str) -> None:
-        if (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
+        while (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
                 not self.operators_stack.is_empty()):
-            while (self.check_if_in_operators(char) <= self.check_if_in_operators(self.operators_stack.top()) and
-                    not self.operators_stack.is_empty()):
-                if self.brackets_stack.is_empty():
-                    self.equation_stack.my_push(self.operators_stack.my_pop())
-                else:
-                    if self.operators_stack.len() - int(self.brackets_stack.top()) == 0:
-                        return
-                    self.equation_stack.my_push(self.operators_stack.my_pop())
+            if self.brackets_stack.is_empty():
+                self.equation_stack.my_push(self.operators_stack.my_pop())
+            else:
+                if self.operators_stack.len() - int(self.brackets_stack.top()) == 0:
+                    return
+                self.equation_stack.my_push(self.operators_stack.my_pop())
 
     def create_stack(self) -> None:
         number_appeared = 0
@@ -57,7 +55,7 @@ class RPNStack:
                     self.operators_stack.my_push("*")
             elif i == "(":
                 number_appeared = 0
-                self.brackets_stack.my_push(self.operators_stack.len())
+                self.brackets_stack.my_push(str(self.operators_stack.len()))
             elif i == ")":
                 self.add_operators_from_bracket()
                 self.brackets_stack.my_pop()
@@ -103,7 +101,7 @@ class EquationToCalculate:
             else:
                 last_digit = float(self.result_stack.my_pop())
                 second_last_digit = float(self.result_stack.my_pop())
-                self.result_stack.my_push(self.choose_operation(last_digit, second_last_digit))
+                self.result_stack.my_push(str(self.choose_operation(last_digit, second_last_digit)))
                 self.reversed_stack.my_pop()
         return self.result_stack.top()
 
@@ -117,4 +115,4 @@ if __name__ == "__main__":
     except TypeError:
         print("error in equation")
 
-# (3*6+2)+(14/3+4) 17*(2+3)+4+(8*5) (-2)*4+6/7.5-2.5 2*2+2-2+(2*2+2-2*2)*2-2+2
+# (3*6+2)+(14/3+4) 17*(2+3)+4+(8*5)
